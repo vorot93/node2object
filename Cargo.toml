@@ -1,0 +1,12 @@
+[package]
+name = "node2object"
+version = "0.1.0"
+authors = ["Artem Vorotnikov <artem@vorotnikov.me>"]
+description = "Convert between XML nodes and JSON objects."
+repository = "https://github.com/vorot93/node2object"
+keywords = ["json", "xml", "xml2json"]
+license = "MIT"
+
+[dependencies]
+treexml = "0.3"
+serde_json = "0.9"
