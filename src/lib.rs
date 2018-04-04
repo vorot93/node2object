@@ -79,14 +79,12 @@ fn scan_xml_node(e: &treexml::Element) -> XMLNodeType {
 
 fn parse_text(text: &str) -> Value {
     match text.parse::<f64>() {
-        Ok(v) => {
-            match Number::from_f64(v) {
-                Some(v) => {
-                    return Value::Number(v);
-                }
-                _ => {}
+        Ok(v) => match Number::from_f64(v) {
+            Some(v) => {
+                return Value::Number(v);
             }
-        }
+            _ => {}
+        },
         _ => {}
     }
 
@@ -101,9 +99,11 @@ fn parse_text(text: &str) -> Value {
 }
 
 fn parse_text_contents(e: &treexml::Element) -> Value {
-    let text = format!("{}{}",
-                       &e.text.clone().unwrap_or(String::new()),
-                       &e.cdata.clone().unwrap_or(String::new()));
+    let text = format!(
+        "{}{}",
+        &e.text.clone().unwrap_or(String::new()),
+        &e.cdata.clone().unwrap_or(String::new())
+    );
     parse_text(&text)
 }
 
@@ -126,7 +126,11 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
                                 data.insert(c.name.clone(), Value::Array(vec![elem, v]));
                                 vectorized.insert(c.name.clone());
                             } else {
-                                data.get_mut(&c.name).unwrap().as_array_mut().unwrap().push(v);
+                                data.get_mut(&c.name)
+                                    .unwrap()
+                                    .as_array_mut()
+                                    .unwrap()
+                                    .push(v);
                             }
                         }
                     }
@@ -135,24 +139,22 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
             }
             Some(Value::Object(data))
         }
-        XMLNodeType::Text => {
-            Some(parse_text_contents(e))
-        }
-        XMLNodeType::Attributes => {
-            Some(Value::Object(e.attributes
+        XMLNodeType::Text => Some(parse_text_contents(e)),
+        XMLNodeType::Attributes => Some(Value::Object(
+            e.attributes
                 .clone()
                 .into_iter()
                 .map(|(k, v)| (format!("@{}", k), parse_text(&v)))
-                .collect()))
-        }
-        XMLNodeType::TextAndAttributes => {
-            Some(Value::Object(e.attributes
+                .collect(),
+        )),
+        XMLNodeType::TextAndAttributes => Some(Value::Object(
+            e.attributes
                 .clone()
                 .into_iter()
                 .map(|(k, v)| (format!("@{}", k), parse_text(&v)))
                 .chain(vec![("#text".to_string(), parse_text_contents(&e))])
-                .collect()))
-        }
+                .collect(),
+        )),
         _ => None,
     }
 }
@@ -172,9 +174,7 @@ mod tests {
     fn node2object_empty() {
         let fixture = treexml::Element::new("e");
         let scan_result = XMLNodeType::Empty;
-        let conv_result = json!({
-            "e": null
-        });
+        let conv_result = json!({ "e": null });
 
         assert_eq!(scan_result, scan_xml_node(&fixture));
         assert_eq!(conv_result, Value::Object(node2object(&fixture)));
@@ -196,7 +196,7 @@ mod tests {
         let mut fixture = treexml::Element::new("player");
         fixture.attributes.insert("score".into(), "9000".into());
         let scan_result = XMLNodeType::Attributes;
-        let conv_result = json!({"player": json!({"@score": 9000.0})});
+        let conv_result = json!({ "player": json!({"@score": 9000.0}) });
 
         assert_eq!(scan_result, scan_xml_node(&fixture));
         assert_eq!(conv_result, Value::Object(node2object(&fixture)));
@@ -208,9 +208,7 @@ mod tests {
         fixture.text = Some("Kolya".into());
         fixture.attributes.insert("score".into(), "9000".into());
         let scan_result = XMLNodeType::TextAndAttributes;
-        let conv_result = json!({
-            "player": json!({"#text": "Kolya", "@score": 9000.0})
-        });
+        let conv_result = json!({ "player": json!({"#text": "Kolya", "@score": 9000.0}) });
 
         assert_eq!(scan_result, scan_xml_node(&fixture));
         assert_eq!(conv_result, Value::Object(node2object(&fixture)));
@@ -219,25 +217,26 @@ mod tests {
     #[test]
     fn node2object_parent() {
         let mut fixture = treexml::Element::new("ServerData");
-        fixture.children.push({
-            let mut node = treexml::Element::new("Player");
-            node.text = Some("Kolya".into());
-            node
-        });
-        fixture.children.push({
-            let mut node = treexml::Element::new("Player");
-            node.text = Some("Petya".into());
-            node
-        });
-        fixture.children.push({
-            let mut node = treexml::Element::new("Player");
-            node.text = Some("Misha".into());
-            node
-        });
+        fixture.children = vec![
+            {
+                let mut node = treexml::Element::new("Player");
+                node.text = Some("Kolya".into());
+                node
+            },
+            {
+                let mut node = treexml::Element::new("Player");
+                node.text = Some("Petya".into());
+                node
+            },
+            {
+                let mut node = treexml::Element::new("Player");
+                node.text = Some("Misha".into());
+                node
+            },
+        ];
         let scan_result = XMLNodeType::Parent;
-        let conv_result = json!({
-            "ServerData": json!({ "Player": [ "Kolya", "Petya", "Misha" ] })
-        });
+        let conv_result =
+            json!({ "ServerData": json!({ "Player": [ "Kolya", "Petya", "Misha" ] }) });
 
         assert_eq!(scan_result, scan_xml_node(&fixture));
         assert_eq!(conv_result, Value::Object(node2object(&fixture)));
