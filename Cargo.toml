@@ -9,4 +9,4 @@ license = "MIT"
 
 [dependencies]
 treexml = "0.3"
-serde_json = "0.9"
+serde_json = "1"
