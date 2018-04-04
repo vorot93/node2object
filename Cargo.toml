@@ -1,6 +1,6 @@
 [package]
 name = "node2object"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Artem Vorotnikov <artem@vorotnikov.me>"]
 description = "Convert between XML nodes and JSON objects."
 repository = "https://github.com/vorot93/node2object"
