@@ -114,6 +114,12 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
             let mut firstpass = std::collections::HashSet::new();
             let mut vectorized = std::collections::HashSet::new();
 
+            if e.attributes.len() > 0 {
+                for (k, v) in e.attributes.clone().into_iter() {
+                    data.insert(format!("@{}", k), parse_text(&v));
+                }
+            }
+
             for c in &e.children {
                 match convert_node_aux(c) {
                     Some(v) => {
@@ -240,5 +246,33 @@ mod tests {
 
         assert_eq!(scan_result, scan_xml_node(&fixture));
         assert_eq!(conv_result, Value::Object(node2object(&fixture)));
+    }
+
+    #[test]
+    fn node2object_preserve_attributes_parents() {
+        let dom_root = treexml::Document::parse(
+            "
+        <a pizza=\"hotdog\">           
+          <b frenchfry=\"milkshake\">
+            <c>scotch</c>
+          </b>
+        </a>
+    "
+                .as_bytes(),
+        ).unwrap()
+            .root
+            .unwrap();
+
+        let json_result = Value::Object(node2object(&dom_root));
+        let expected = json!({
+            "a": json!({
+                "@pizza": "hotdog",
+                "b": json!({
+                    "@frenchfry": "milkshake",
+                    "c":  "scotch"
+                })
+            })
+        });
+        assert_eq!(json_result, expected);
     }
 }
