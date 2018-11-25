@@ -38,7 +38,6 @@
 
 extern crate treexml;
 
-#[macro_use]
 extern crate serde_json;
 
 use serde_json::{Map, Number, Value};
@@ -175,6 +174,8 @@ pub fn node2object(e: &treexml::Element) -> Map<String, Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use serde_json::json;
 
     #[test]
     fn node2object_empty() {
