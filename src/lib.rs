@@ -259,10 +259,11 @@ mod tests {
           </b>
         </a>
     "
-                .as_bytes(),
-        ).unwrap()
-            .root
-            .unwrap();
+            .as_bytes(),
+        )
+        .unwrap()
+        .root
+        .unwrap();
 
         let json_result = Value::Object(node2object(&dom_root));
         let expected = json!({
