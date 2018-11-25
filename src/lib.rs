@@ -60,38 +60,27 @@ fn scan_xml_node(e: &treexml::Element) -> XMLNodeType {
             } else {
                 XMLNodeType::Attributes
             }
+        } else if e.attributes.is_empty() {
+            XMLNodeType::Text
         } else {
-            if e.attributes.is_empty() {
-                XMLNodeType::Text
-            } else {
-                XMLNodeType::TextAndAttributes
-            }
+            XMLNodeType::TextAndAttributes
         }
+    } else if e.text.is_none() && e.cdata.is_none() {
+        XMLNodeType::Parent
     } else {
-        if e.text.is_some() || e.cdata.is_some() {
-            XMLNodeType::SemiStructured
-        } else {
-            XMLNodeType::Parent
-        }
+        XMLNodeType::SemiStructured
     }
 }
 
 fn parse_text(text: &str) -> Value {
-    match text.parse::<f64>() {
-        Ok(v) => match Number::from_f64(v) {
-            Some(v) => {
-                return Value::Number(v);
-            }
-            _ => {}
-        },
-        _ => {}
+    if let Ok(v) = text.parse::<f64>() {
+        if let Some(v) = Number::from_f64(v) {
+            return Value::Number(v);
+        }
     }
 
-    match text.parse::<bool>() {
-        Ok(v) => {
-            return Value::Bool(v);
-        }
-        _ => {}
+    if let Ok(v) = text.parse::<bool>() {
+        return Value::Bool(v);
     }
 
     Value::String(text.into())
@@ -113,33 +102,30 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
             let mut firstpass = std::collections::HashSet::new();
             let mut vectorized = std::collections::HashSet::new();
 
-            if e.attributes.len() > 0 {
+            if !e.attributes.is_empty() {
                 for (k, v) in e.attributes.clone().into_iter() {
                     data.insert(format!("@{}", k), parse_text(&v));
                 }
             }
 
             for c in &e.children {
-                match convert_node_aux(c) {
-                    Some(v) => {
-                        if !firstpass.contains(&c.name) {
-                            data.insert(c.name.clone(), v);
-                            firstpass.insert(c.name.clone());
+                if let Some(v) = convert_node_aux(c) {
+                    if firstpass.contains(&c.name) {
+                        if vectorized.contains(&c.name) {
+                            data.get_mut(&c.name)
+                                .unwrap()
+                                .as_array_mut()
+                                .unwrap()
+                                .push(v);
                         } else {
-                            if !vectorized.contains(&c.name) {
-                                let elem = data.remove(&c.name).unwrap();
-                                data.insert(c.name.clone(), Value::Array(vec![elem, v]));
-                                vectorized.insert(c.name.clone());
-                            } else {
-                                data.get_mut(&c.name)
-                                    .unwrap()
-                                    .as_array_mut()
-                                    .unwrap()
-                                    .push(v);
-                            }
+                            let elem = data.remove(&c.name).unwrap();
+                            data.insert(c.name.clone(), Value::Array(vec![elem, v]));
+                            vectorized.insert(c.name.clone());
                         }
+                    } else {
+                        data.insert(c.name.clone(), v);
+                        firstpass.insert(c.name.clone());
                     }
-                    _ => {}
                 }
             }
             Some(Value::Object(data))
