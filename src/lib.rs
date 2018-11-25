@@ -98,11 +98,11 @@ fn parse_text(text: &str) -> Value {
 }
 
 fn parse_text_contents(e: &treexml::Element) -> Value {
-    let text = format!(
-        "{}{}",
-        &e.text.clone().unwrap_or(String::new()),
-        &e.cdata.clone().unwrap_or(String::new())
-    );
+    let text = &[&e.text, &e.cdata]
+        .iter()
+        .map(|v| v.as_ref().map(String::as_str).unwrap_or(""))
+        .collect::<Vec<_>>()
+        .concat();
     parse_text(&text)
 }
 
