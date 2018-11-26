@@ -99,8 +99,8 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
     match scan_xml_node(e) {
         XMLNodeType::Parent => {
             let mut data = Map::new();
-            let mut firstpass = std::collections::HashSet::new();
-            let mut vectorized = std::collections::HashSet::new();
+            let mut firstpass = std::collections::HashSet::<&str>::new();
+            let mut vectorized = std::collections::HashSet::<&str>::new();
 
             if !e.attributes.is_empty() {
                 for (k, v) in e.attributes.clone().into_iter() {
@@ -110,8 +110,8 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
 
             for c in &e.children {
                 if let Some(v) = convert_node_aux(c) {
-                    if firstpass.contains(&c.name) {
-                        if vectorized.contains(&c.name) {
+                    if firstpass.contains(&c.name.as_str()) {
+                        if vectorized.contains(&c.name.as_str()) {
                             data.get_mut(&c.name)
                                 .unwrap()
                                 .as_array_mut()
@@ -120,11 +120,11 @@ fn convert_node_aux(e: &treexml::Element) -> Option<Value> {
                         } else {
                             let elem = data.remove(&c.name).unwrap();
                             data.insert(c.name.clone(), Value::Array(vec![elem, v]));
-                            vectorized.insert(c.name.clone());
+                            vectorized.insert(c.name.as_str());
                         }
                     } else {
                         data.insert(c.name.clone(), v);
-                        firstpass.insert(c.name.clone());
+                        firstpass.insert(c.name.as_str());
                     }
                 }
             }
