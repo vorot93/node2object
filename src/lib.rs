@@ -164,87 +164,50 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn node2object_empty() {
-        let fixture = treexml::Element::new("e");
-        let scan_result = XMLNodeType::Empty;
-        let conv_result = json!({ "e": null });
+    fn node2object_basic() {
+        for (src, scan_result, conv_result) in vec![
+            (r#"<e/>"#, XMLNodeType::Empty, json!({ "e": null })),
+            (
+                r#"<player>Kolya</player>"#,
+                XMLNodeType::Text,
+                json!({"player": "Kolya"}),
+            ),
+            (
+                r#"<player score = "9000"/>"#,
+                XMLNodeType::Attributes,
+                json!({ "player": json!({"@score": 9000.0}) }),
+            ),
+            (
+                r#"<player score = "9000">Kolya</player>"#,
+                XMLNodeType::TextAndAttributes,
+                json!({ "player": json!({"#text": "Kolya", "@score": 9000.0}) }),
+            ),
+            (
+                r#"<data><user>Kolya</user><user>Petya</user></data>"#,
+                XMLNodeType::Parent,
+                json!({ "data": json!({ "user": [ "Kolya", "Petya" ] }) }),
+            ),
+        ] {
+            let fixture = treexml::Document::parse(src.as_bytes())
+                .unwrap()
+                .root
+                .unwrap();
 
-        assert_eq!(scan_result, scan_xml_node(&fixture));
-        assert_eq!(conv_result, Value::Object(node2object(&fixture)));
-    }
-
-    #[test]
-    fn node2object_text() {
-        let mut fixture = treexml::Element::new("player");
-        fixture.text = Some("Kolya".into());
-        let scan_result = XMLNodeType::Text;
-        let conv_result = json!({"player": "Kolya"});
-
-        assert_eq!(scan_result, scan_xml_node(&fixture));
-        assert_eq!(conv_result, Value::Object(node2object(&fixture)));
-    }
-
-    #[test]
-    fn node2object_attributes() {
-        let mut fixture = treexml::Element::new("player");
-        fixture.attributes.insert("score".into(), "9000".into());
-        let scan_result = XMLNodeType::Attributes;
-        let conv_result = json!({ "player": json!({"@score": 9000.0}) });
-
-        assert_eq!(scan_result, scan_xml_node(&fixture));
-        assert_eq!(conv_result, Value::Object(node2object(&fixture)));
-    }
-
-    #[test]
-    fn node2object_text_and_attributes() {
-        let mut fixture = treexml::Element::new("player");
-        fixture.text = Some("Kolya".into());
-        fixture.attributes.insert("score".into(), "9000".into());
-        let scan_result = XMLNodeType::TextAndAttributes;
-        let conv_result = json!({ "player": json!({"#text": "Kolya", "@score": 9000.0}) });
-
-        assert_eq!(scan_result, scan_xml_node(&fixture));
-        assert_eq!(conv_result, Value::Object(node2object(&fixture)));
-    }
-
-    #[test]
-    fn node2object_parent() {
-        let mut fixture = treexml::Element::new("ServerData");
-        fixture.children = vec![
-            {
-                let mut node = treexml::Element::new("Player");
-                node.text = Some("Kolya".into());
-                node
-            },
-            {
-                let mut node = treexml::Element::new("Player");
-                node.text = Some("Petya".into());
-                node
-            },
-            {
-                let mut node = treexml::Element::new("Player");
-                node.text = Some("Misha".into());
-                node
-            },
-        ];
-        let scan_result = XMLNodeType::Parent;
-        let conv_result =
-            json!({ "ServerData": json!({ "Player": [ "Kolya", "Petya", "Misha" ] }) });
-
-        assert_eq!(scan_result, scan_xml_node(&fixture));
-        assert_eq!(conv_result, Value::Object(node2object(&fixture)));
+            assert_eq!(scan_result, scan_xml_node(&fixture));
+            assert_eq!(conv_result, Value::Object(node2object(&fixture)));
+        }
     }
 
     #[test]
     fn node2object_preserve_attributes_parents() {
         let dom_root = treexml::Document::parse(
-            "
-        <a pizza=\"hotdog\">           
-          <b frenchfry=\"milkshake\">
+            r#"
+        <a pizza="hotdog">
+          <b frenchfry="milkshake">
             <c>scotch</c>
           </b>
         </a>
-    "
+    "#
             .as_bytes(),
         )
         .unwrap()
