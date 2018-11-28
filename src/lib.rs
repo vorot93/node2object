@@ -1,4 +1,6 @@
-//! Convert between XML nodes ([treexml](https://github.com/rahulg/treexml-rs)) and JSON objects ([serde-json](https://github.com/serde-rs/json)).
+//! This is a library for converting **structured** XML to JSON based on this ["spec"](https://www.xml.com/pub/a/2006/05/31/converting-between-xml-and-json.html).
+//! Uses models from [treexml](https://github.com/rahulg/treexml-rs) and [serde-json](https://github.com/serde-rs/json).
+//!
 //!
 //! ## Example
 //! ```
