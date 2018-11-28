@@ -166,28 +166,29 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn node2object_basic() {
+    fn spec_types() {
         for (src, scan_result, conv_result) in vec![
             (r#"<e/>"#, XMLNodeType::Empty, json!({ "e": null })),
+            (r#"<e>text</e>"#, XMLNodeType::Text, json!({"e": "text"})),
             (
-                r#"<player>Kolya</player>"#,
-                XMLNodeType::Text,
-                json!({"player": "Kolya"}),
-            ),
-            (
-                r#"<player score = "9000"/>"#,
+                r#"<e name="value"/>"#,
                 XMLNodeType::Attributes,
-                json!({ "player": json!({"@score": 9000.0}) }),
+                json!({ "e": {"@name": "value"} }),
             ),
             (
-                r#"<player score = "9000">Kolya</player>"#,
+                r#"<e name="value">text</e>"#,
                 XMLNodeType::TextAndAttributes,
-                json!({ "player": json!({"#text": "Kolya", "@score": 9000.0}) }),
+                json!({ "e": { "@name": "value", "#text": "text" } }),
             ),
             (
-                r#"<data><user>Kolya</user><user>Petya</user></data>"#,
+                r#"<e> <a>text</a> <b>text</b> </e>"#,
                 XMLNodeType::Parent,
-                json!({ "data": json!({ "user": [ "Kolya", "Petya" ] }) }),
+                json!({ "e": { "a": "text", "b": "text" } }),
+            ),
+            (
+                r#"<e> <a>text</a> <a>text</a> </e>"#,
+                XMLNodeType::Parent,
+                json!({ "e": { "a": ["text", "text"] } }),
             ),
         ] {
             let fixture = treexml::Document::parse(src.as_bytes())
@@ -201,7 +202,22 @@ mod tests {
     }
 
     #[test]
-    fn node2object_preserve_attributes_parents() {
+    fn spec_examples() {
+        for (src, conv_result) in vec![(
+            r#"<e><a>some</a><b>textual</b><a>content</a></e>"#,
+            json!({ "e": { "a": [ "some", "content" ], "b": "textual"} }),
+        )] {
+            let fixture = treexml::Document::parse(src.as_bytes())
+                .unwrap()
+                .root
+                .unwrap();
+
+            assert_eq!(conv_result, Value::Object(node2object(&fixture)));
+        }
+    }
+
+    #[test]
+    fn preserve_attributes_parents() {
         let dom_root = treexml::Document::parse(
             r#"
         <a pizza="hotdog">
