@@ -1,4 +1,7 @@
 # node2object
+
+[![GitHub Actions workflow status](https://github.com/vorot93/node2object/workflows/Continuous%20integration/badge.svg)](https://github.com/vorot93/node2object/actions)
+
 Convert between XML nodes ([treexml](https://github.com/rahulg/treexml-rs)) and JSON objects ([serde-json](https://github.com/serde-rs/json)).
 
 ## Example

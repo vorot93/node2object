@@ -4,43 +4,30 @@
 //!
 //! ## Example
 //! ```
-//! extern crate treexml;
+//! let dom_root = treexml::Document::parse("
+//!     <population>
+//!       <entry>
+//!         <name>Alex</name>
+//!         <height>173.5</height>
+//!       </entry>
+//!       <entry>
+//!         <name>Mel</name>
+//!         <height>180.4</height>
+//!       </entry>
+//!     </population>
+//! ".as_bytes()).unwrap().root.unwrap();
 //!
-//! #[macro_use]
-//! extern crate serde_json;
-//!
-//! extern crate node2object;
-//!
-//! fn main() {
-//!     let dom_root = treexml::Document::parse("
-//!         <population>
-//!           <entry>
-//!             <name>Alex</name>
-//!             <height>173.5</height>
-//!           </entry>
-//!           <entry>
-//!             <name>Mel</name>
-//!             <height>180.4</height>
-//!           </entry>
-//!         </population>
-//!     ".as_bytes()).unwrap().root.unwrap();
-//!
-//!     assert_eq!(serde_json::Value::Object(node2object::node2object(&dom_root)), json!(
-//!         {
-//!           "population": {
-//!             "entry": [
-//!               { "name": "Alex", "height": 173.5 },
-//!               { "name": "Mel", "height": 180.4 }
-//!             ]
-//!           }
-//!         }
-//!     ));
-//! }
+//! assert_eq!(serde_json::Value::Object(node2object::node2object(&dom_root)), serde_json::json!(
+//!     {
+//!       "population": {
+//!         "entry": [
+//!           { "name": "Alex", "height": 173.5 },
+//!           { "name": "Mel", "height": 180.4 }
+//!         ]
+//!       }
+//!     }
+//! ));
 //! ```
-
-extern crate treexml;
-
-extern crate serde_json;
 
 use serde_json::{Map, Number, Value};
 
